@@ -1,8 +1,9 @@
-import customtkinter as ctk
+import tkinter as tk
 from tkinter import *
-from tkinter import messagebox
 from tkinter import ttk
-from CTkListbox import *
+import customtkinter as ctk
+from tkinter import messagebox
+from tkinter import *
 import sqlite3
 
 class App(ctk.CTk):
@@ -15,7 +16,8 @@ class App(ctk.CTk):
     def window_config(self):
         self.title('Cadastro de Clientes')
         self.geometry('700x500')
-        self.resizable(False, False)
+        #self.resizable(False, False)
+
     def salvando_dados(self):
         with sqlite3.connect('clientes.db') as conexao:
             self.db = conexao.cursor()
@@ -60,6 +62,43 @@ class App(ctk.CTk):
             else:
                 print(f'{self.valor_pesquisa}, não foi encontrado')
 
+    def recuperar_dados(self):
+        with sqlite3.connect('clientes.db') as conexao:
+            self.db = conexao.cursor()
+            self.db.execute('SELECT * FROM clientes')
+
+            self.dados = self.db.fetchall()
+            self.db.close()
+
+            return self.dados
+    def preencher_tabela(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        self.dados = self.recuperar_dados()
+
+        for item in self.dados:
+            self.tree.insert("", "end", values=item)
+
+    def atualizar_tabela(self):
+        self.preencher_tabela()
+        self.after(1000, self.atualizar_tabela)
+
+    def atualizar_dados(self):
+        with sqlite3.connect('clientes.db') as conexao:
+            self.db = conexao.cursor()
+
+            self.novo_codigo = codigo_value.get()
+            self.novo_nome = self.name_value.get()
+            self.novo_contato = self.contato_value.get()
+            self.nova_cidade = self.cidade_value.get()
+
+            self.sql = 'UPDATE clientes SET nome = ?, contato = ?, cidade = ? WHERE codigo =?'
+
+            self.db.execute(self.sql, (self.novo_codigo, self.novo_nome, self.novo_contato, self.nova_cidade))
+
+            conexao.commit()
+
     def excluir_linha(self):
         with sqlite3.connect('clientes.db') as conexao:
             db = conexao.cursor()
@@ -80,7 +119,6 @@ class App(ctk.CTk):
 
         print('Todos os campos foram limpos!')
 
-
     def janela_inicial(self):
 
         self.codigo_value = StringVar()
@@ -91,9 +129,8 @@ class App(ctk.CTk):
         self.formulario_frame = ctk.CTkFrame(self, height=220, width=670, fg_color='grey')
         self.dados_frame = ctk.CTkFrame(self, height=220, width=670, fg_color='grey')
 
-
         self.formulario_frame.place(x = 15, y = 20)
-        self.dados_frame.place(x = 15, y = 260)
+        self.dados_frame.place(x=15, y=260)
 
         self.codigo_label = ctk.CTkLabel(self.formulario_frame, text='Código:', font=('arial bold', 18))
         self.nome_label = ctk.CTkLabel(self.formulario_frame, text='Nome:', font=('arial bold', 18))
@@ -111,6 +148,7 @@ class App(ctk.CTk):
         self.botao_alterar = ctk.CTkButton(self.formulario_frame, text='Alterar', width=60, height=30, font=('arial bold', 18))
         self.botao_excluir = ctk.CTkButton(self.formulario_frame, text='Excluir', width=60, height=30, font=('arial bold', 18), command = self.excluir_linha)
 
+
         self.botao_limpar.place(x = 200, y = 20)
         self.botao_buscar.place(x = 275, y = 20)
         self.botao_adicionar.place(x = 400, y = 20)
@@ -126,6 +164,38 @@ class App(ctk.CTk):
         self.nome_entry.place(x = 90, y = 70)
         self.contato_entry.place(x = 90, y = 120)
         self.cidade_entry.place(x = 390, y = 120)
+
+        self.dados_frame.place(x = 15, y = 260)
+
+        # Definir colunas da tabela
+        self.colunas = ("Codigo", "Nome", "Contato", "Cidade")
+
+        # Criar tabela usando ttk.treeview
+        self.tree = ttk.Treeview(self.dados_frame, columns=self.colunas, show="headings")
+
+        self.tree.heading('Codigo', text='Codigo')
+        self.tree.heading('Nome', text='Nome')
+        self.tree.heading('Contato', text='Contato')
+        self.tree.heading('Cidade', text='Cidade')
+
+        self.tree.column('Codigo', width=166, anchor='center')
+        self.tree.column('Nome', width=166)
+        self.tree.column('Contato', width=166, anchor='center')
+        self.tree.column('Cidade', width=166, anchor='center')
+
+        # Adicionar a tabela ao frame
+        self.tree.pack(fill='both', expand=True)
+
+        #Configurar o estilo da tabela para combinar com o CustomTkinter
+        self.estilo = ttk.Style()
+        self.estilo.theme_use("clam") # Usar o tema "Clam" que é mais moderno
+        self.estilo.configure('Treeview.Heading', background='#2E2E2E', foreground='white')
+        self.estilo.configure('Treeview', background='#1E1E1E', foreground='white', fieldbackground='#1E1E1E')
+
+
+        self.preencher_tabela()
+        self.atualizar_tabela()
+
 
 
 if __name__ == '__main__':
