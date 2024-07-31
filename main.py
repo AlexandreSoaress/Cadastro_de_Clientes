@@ -13,20 +13,25 @@ class App(ctk.CTk):
         self.window_config()
         self.janela_inicial()
 
+    def coletar_dados_formulario(self):
+
+        self.codigo = self.codigo_value.get()
+        self.nome = self.name_value.get()
+        self.contato = self.contato_value.get()
+        self.cidade = self.cidade_value.get()
+
+        return self.codigo, self.nome, self.contato, self.cidade
     def window_config(self):
         self.title('Cadastro de Clientes')
         self.geometry('700x500')
-        # self.resizable(False, False)
+        self.resizable(False, False)
 
     def salvando_dados(self):
         with sqlite3.connect('clientes.db') as conexao:
+            self.coletar_dados_formulario()
+
             self.db = conexao.cursor()
             self.db.execute('create table if not exists clientes(codigo integer, nome text, contato text, cidade text)')
-
-            self.codigo = self.codigo_entry.get()
-            self.nome = self.nome_entry.get()
-            self.contato = self.contato_entry.get()
-            self.cidade = self.cidade_entry.get()
 
             self.valor_para_verificar = self.codigo
             self.sql = 'SELECT 1 FROM clientes WHERE codigo = ? LIMIT 1'
@@ -90,11 +95,7 @@ class App(ctk.CTk):
         self.after(1000, self.atualizar_tabela)
 
     def atualizar_dados(self):
-
-        self.nome_atualizado = self.nome_entry.get()
-        self.contato_atualizado = self.contato_entry.get()
-        self.cidade_atualizada = self.contato_entry.get()
-        self.codigo_atualizado = self.codigo_entry.get()
+        self.coletar_dados_formulario()
 
         self.conexao = sqlite3.connect('clientes.db')
         self.db = self.conexao.cursor()
@@ -102,7 +103,8 @@ class App(ctk.CTk):
 
         self.sql = 'UPDATE clientes SET nome = ?, contato = ?, cidade = ? WHERE codigo = ?'
 
-        self.db.execute(self.sql, (self.nome_atualizado, self.contato_atualizado, self.cidade_atualizada, self.codigo_atualizado))
+        self.db.execute(self.sql, (self.nome, self.contato, self.cidade, self.codigo))
+        messagebox.showinfo('Alteração', 'Os dados foram alterados com sucesso!')
         self.conexao.commit()
 
     def excluir_linha(self):
@@ -122,7 +124,6 @@ class App(ctk.CTk):
         self.name_value.set('')
         self.contato_value.set('')
         self.cidade_value.set('')
-
         print('Todos os campos foram limpos!')
 
     def janela_inicial(self):
